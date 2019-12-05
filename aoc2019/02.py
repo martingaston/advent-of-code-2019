@@ -1,7 +1,28 @@
 import unittest
 from utils import read_file_to_list
 
-def process_intcode(intcode):
+def find_output_19690720(starting_intcode=None):
+    noun = 0
+
+    while noun < 100:
+        verb = 0
+        while verb < 100:
+            intcode = starting_intcode.copy()
+            intcode[1] = noun
+            intcode[2] = verb
+            result = process_intcode(intcode)[0]
+
+            if result == 19690720:
+                return [noun, verb]
+
+            verb += 1
+
+        noun += 1
+
+    raise ValueError("output 19690720 not with input")
+
+
+def process_intcode(intcode=None):
     cursor = 0
 
     while cursor < len(intcode):
@@ -36,6 +57,10 @@ if __name__ == '__main__':
 
     print(process_intcode(intcode))
     print(f"the value at position 0 after the program halts is: {intcode[0]}")
+
+    intcode = [int(x) for x in read_file_to_list("input/02.txt")[0].split(",")]
+    output_19690720 = find_output_19690720(intcode)
+    print(f"100 * noun + verb = {100 * output_19690720[0] + output_19690720[1]}")
 
 class Test(unittest.TestCase):
     def test_setup_properly(self):
