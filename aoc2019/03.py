@@ -95,6 +95,9 @@ def move_list_of_movements(movements):
 
     return points
 
+def count_steps(wire, intersection_index):
+    return len(wire[:intersection_index])
+
 if __name__ == "__main__":
     wire_paths = list(map(lambda wire_path: wire_path.split(","), read_file_to_list("input/03.txt")))
     wire_points = []
@@ -103,8 +106,11 @@ if __name__ == "__main__":
         wire_points.append(move_list_of_movements(wire_path))
 
     intersections = find_intersections(wire_points[0], wire_points[1])
+    steps = [[count_steps(path, path.index(intersection)) for intersection in intersections] for path in wire_points]
+    fewest_steps = min(first_wire + second_wire for (first_wire, second_wire) in zip(steps[0], steps[1]))
     distances_from_origin = [manhattan_distance(Point(0,0), intersection) for intersection in intersections]
     print(min(distances_from_origin))
+    print(fewest_steps)
 
 class Test(unittest.TestCase):
     def test_unittest_is_working(self):
@@ -191,3 +197,32 @@ class Test(unittest.TestCase):
         points = move_list_of_movements(["R2", "U2", "L2", "D2"])
 
         self.assertEqual([Point(0,0), Point(1, 0), Point(2,0), Point(2,1), Point(2,2), Point(1,2), Point(0,2), Point(0,1), Point(0,0)], points)
+
+    def test_can_count_steps(self):
+
+        wire = [Point(0,0), Point(0,1), Point(0,2), Point(0,3), Point(0,4), Point(0,5), Point(1,5), Point(2,5), Point(3,5), Point(4,5), Point(5,5)]
+        intersection_index = 10
+
+        steps = count_steps(wire, intersection_index)
+
+        self.assertEqual(10, steps)
+
+    def test_can_find_fewest_steps_example_one(self):
+        wires = [wire.split(",") for wire in ["R75,D30,R83,U83,L12,D49,R71,U7,L72", "U62,R66,U55,R34,D71,R55,D58,R83"]]
+        paths = [move_list_of_movements(wire) for wire in wires]
+        intersections = find_intersections(paths[0], paths[1])
+
+        steps = [[count_steps(path, path.index(intersection)) for intersection in intersections] for path in paths]
+        fewest_steps = min(first_wire + second_wire for (first_wire, second_wire) in zip(steps[0], steps[1]))
+
+        self.assertEqual(610, fewest_steps)
+
+    def test_can_find_fewest_steps_example_two(self):
+        wires = [wire.split(",") for wire in ["R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"]]
+        paths = [move_list_of_movements(wire) for wire in wires]
+        intersections = find_intersections(paths[0], paths[1])
+
+        steps = [[count_steps(path, path.index(intersection)) for intersection in intersections] for path in paths]
+        fewest_steps = min(first_wire + second_wire for (first_wire, second_wire) in zip(steps[0], steps[1]))
+
+        self.assertEqual(410, fewest_steps)
