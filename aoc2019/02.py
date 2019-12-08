@@ -1,6 +1,7 @@
 import unittest
 from utils import read_file_to_list
 
+
 def find_output_19690720(starting_intcode=None):
     noun = 0
 
@@ -48,7 +49,8 @@ def process_intcode(intcode=None):
 
     return intcode
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     intcode = [int(x) for x in read_file_to_list("input/02.txt")[0].split(",")]
 
     # replace two positions with hardcoded data (via instructions)
@@ -61,6 +63,7 @@ if __name__ == '__main__':
     intcode = [int(x) for x in read_file_to_list("input/02.txt")[0].split(",")]
     output_19690720 = find_output_19690720(intcode)
     print(f"100 * noun + verb = {100 * output_19690720[0] + output_19690720[1]}")
+
 
 class Test(unittest.TestCase):
     def test_setup_properly(self):
