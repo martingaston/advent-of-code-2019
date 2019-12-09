@@ -23,29 +23,29 @@ def find_output_19690720(starting_intcode=None):
     raise ValueError("output 19690720 not with input")
 
 
-def process_intcode(intcode=None):
-    cursor = 0
+def process_intcode(intcode):
+    pointer = 0
 
-    while cursor < len(intcode):
-        opcode = intcode[cursor]
+    while pointer < len(intcode):
+        opcode = {1: "ADDITION", 2: "MULTIPLICATION", 99: "HALT",}.get(intcode[pointer])
 
-        if opcode == 99:
+        if opcode == "HALT":
             break
-        elif opcode == 1:
-            augend = intcode[cursor + 1]
-            addend = intcode[cursor + 2]
-            target = intcode[cursor + 3]
+        elif opcode == "ADDITION":
+            augend = intcode[pointer + 1]
+            addend = intcode[pointer + 2]
+            target = intcode[pointer + 3]
 
             intcode[target] = intcode[augend] + intcode[addend]
-        elif opcode == 2:
-            multiplier = intcode[cursor + 1]
-            multiplicand = intcode[cursor + 2]
-            target = intcode[cursor + 3]
+        elif opcode == "MULTIPLICATION":
+            multiplier = intcode[pointer + 1]
+            multiplicand = intcode[pointer + 2]
+            target = intcode[pointer + 3]
 
             intcode[target] = intcode[multiplier] * intcode[multiplicand]
         else:
             raise ValueError("opcode should be 1, 2 or 99")
-        cursor += 4
+        pointer += 4
 
     return intcode
 
