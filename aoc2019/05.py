@@ -1,12 +1,20 @@
+import sys
 import unittest
+from io import StringIO
 
 
-def process_intcode(intcode):
+def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
     intcode = intcode.copy()  # shadow intcode to stop mutation outside of the block
     pointer = 0
 
     while pointer < len(intcode):
-        opcode = {1: "ADDITION", 2: "MULTIPLICATION", 99: "HALT",}.get(intcode[pointer])
+        opcode = {
+            1: "ADDITION",
+            2: "MULTIPLICATION",
+            3: "INPUT",
+            4: "OUTPUT",
+            99: "HALT",
+        }.get(intcode[pointer])
 
         if opcode == "HALT":
             break
@@ -16,15 +24,25 @@ def process_intcode(intcode):
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[augend] + intcode[addend]
+            pointer += 4
         elif opcode == "MULTIPLICATION":
             multiplier = intcode[pointer + 1]
             multiplicand = intcode[pointer + 2]
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[multiplier] * intcode[multiplicand]
+            pointer += 4
+        elif opcode == "INPUT":
+            target = intcode[pointer + 1]
+            value = int(intcode_input.readline())
+            intcode[target] = value
+            pointer += 2
+        elif opcode == "OUTPUT":
+            output = intcode[intcode[pointer + 1]]
+            intcode_output.write(str(output))
+            pointer += 2
         else:
             raise ValueError("opcode should be 1, 2 or 99")
-        pointer += 4
 
     return intcode
 
@@ -51,6 +69,33 @@ class Test(unittest.TestCase):
         result = process_intcode([2, 3, 0, 3, 99])
 
         self.assertEqual([2, 3, 0, 6, 99], result)
+
+    def test_opcode_three_inputs_value(self):
+        intcode_input = StringIO("66\n")
+
+        result = process_intcode([3, 0, 99], intcode_input=intcode_input)
+
+        self.assertEqual([66, 0, 99], result)
+
+    def test_opcode_four_outputs_value(self):
+        intcode_output = StringIO()
+
+        result = process_intcode([4, 0], intcode_output=intcode_output)
+
+        self.assertEqual(intcode_output.getvalue().strip(), "4")
+
+    def test_input_and_output_together(self):
+        intcode_input = StringIO("66\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 0, 4, 0, 99],
+            intcode_input=intcode_input,
+            intcode_output=intcode_output,
+        )
+
+        self.assertEqual([66, 0, 4, 0, 99], result)
+        self.assertEqual("66", intcode_output.getvalue().strip())
 
     def test_intcode_can_read_multiple_commands(self):
         result = process_intcode([1, 0, 0, 0, 1, 0, 0, 0, 99])
