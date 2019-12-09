@@ -24,6 +24,7 @@ def find_output_19690720(starting_intcode=None):
 
 
 def process_intcode(intcode):
+    intcode = intcode.copy()  # shadow intcode to stop mutation outside of the block
     pointer = 0
 
     while pointer < len(intcode):
