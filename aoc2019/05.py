@@ -26,36 +26,30 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
     pointer = 0
 
     while pointer < len(intcode):
-        opcode = {
-            1: "ADDITION",
-            2: "MULTIPLICATION",
-            3: "INPUT",
-            4: "OUTPUT",
-            99: "HALT",
-        }.get(intcode[pointer])
+        opcode = Opcode.from_int(intcode[pointer])
 
-        if opcode == "HALT":
+        if opcode.instruction == "HALT":
             break
-        elif opcode == "ADDITION":
+        elif opcode.instruction == "ADDITION":
             augend = intcode[pointer + 1]
             addend = intcode[pointer + 2]
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[augend] + intcode[addend]
             pointer += 4
-        elif opcode == "MULTIPLICATION":
+        elif opcode.instruction == "MULTIPLICATION":
             multiplier = intcode[pointer + 1]
             multiplicand = intcode[pointer + 2]
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[multiplier] * intcode[multiplicand]
             pointer += 4
-        elif opcode == "INPUT":
+        elif opcode.instruction == "INPUT":
             target = intcode[pointer + 1]
             value = int(intcode_input.readline())
             intcode[target] = value
             pointer += 2
-        elif opcode == "OUTPUT":
+        elif opcode.instruction == "OUTPUT":
             output = intcode[intcode[pointer + 1]]
             intcode_output.write(str(output))
             pointer += 2
