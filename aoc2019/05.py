@@ -2,6 +2,24 @@ import sys
 import unittest
 from io import StringIO
 
+class Opcode:
+    def __init__(self, instruction):
+        self.instruction = instruction
+
+    @classmethod
+    def from_int(cls, opcode):
+        instruction = cls._parse_instruction(opcode)
+        return cls(instruction)
+
+    def _parse_instruction(instruction):
+        return {
+            1: "ADDITION",
+            2: "MULTIPLICATION",
+            3: "INPUT",
+            4: "OUTPUT",
+            99: "HALT",
+        }.get(instruction)
+
 
 def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
     intcode = intcode.copy()  # shadow intcode to stop mutation outside of the block
@@ -106,3 +124,10 @@ class Test(unittest.TestCase):
         result = process_intcode([1, 1, 1, 4, 99, 5, 6, 0, 99])
 
         self.assertEqual([30, 1, 1, 4, 2, 5, 6, 0, 99], result)
+
+    def test_opcode_class_can_set_instruction(self):
+        opcode_addition = Opcode.from_int(1)
+        opcode_multiplication = Opcode.from_int(2)
+
+        self.assertEqual("ADDITION", opcode_addition.instruction)
+        self.assertEqual("MULTIPLICATION", opcode_multiplication.instruction)
