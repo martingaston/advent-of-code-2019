@@ -3,22 +3,28 @@ import unittest
 from io import StringIO
 
 class Opcode:
-    def __init__(self, instruction):
+    def __init__(self, instruction, parameter_modes=None):
         self.instruction = instruction
+        self.parameter_modes = parameter_modes
 
     @classmethod
     def from_int(cls, opcode):
         instruction = cls._parse_instruction(opcode)
-        return cls(instruction)
+        parameter_modes = cls._parse_parameter_modes(opcode)
+        return cls(instruction, parameter_modes)
 
-    def _parse_instruction(instruction):
+    def _parse_instruction(opcode):
+        instruction_slice = str(opcode)[-2:]
         return {
             1: "ADDITION",
             2: "MULTIPLICATION",
             3: "INPUT",
             4: "OUTPUT",
             99: "HALT",
-        }.get(instruction)
+        }.get(int(instruction_slice))
+
+    def _parse_parameter_modes(opcode):
+        return [int(i) for i in str(opcode)[::-1][2:]]
 
 
 def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
@@ -125,3 +131,12 @@ class Test(unittest.TestCase):
 
         self.assertEqual("ADDITION", opcode_addition.instruction)
         self.assertEqual("MULTIPLICATION", opcode_multiplication.instruction)
+
+    def test_opcode_class_can_parse_parameter_mode(self):
+        opcode = Opcode.from_int(1002)
+
+        self.assertEqual(opcode.parameter_modes, [0, 1])
+        self.assertEqual(opcode.instruction, "MULTIPLICATION")
+
+    def test_opcode_parameter_that_writes_will_not_be_in_immediate_mode(self):
+        pass
