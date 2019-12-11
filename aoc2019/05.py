@@ -1,24 +1,33 @@
 import sys
 import unittest
 from io import StringIO
+from enum import Enum
 
-class Opcode:
-    def __init__(self, instruction):
-        self.instruction = instruction
+
+class Operation(Enum):
+    ADDITION = 1
+    MULTIPLICATION = 2
+    INPUT = 3
+    OUTPUT = 4
+    HALT = 99
+
+
+class Mode(Enum):
+    POSITION = 0
+    IMMEDIATE = 1
+
+
+class Instruction:
+    def __init__(self, operation):
+        self.operation = operation
 
     @classmethod
-    def from_int(cls, opcode):
-        instruction = cls._parse_instruction(opcode)
-        return cls(instruction)
+    def from_int(cls, instruction):
+        operation = cls._parse_operation(instruction)
+        return cls(operation)
 
-    def _parse_instruction(instruction):
-        return {
-            1: "ADDITION",
-            2: "MULTIPLICATION",
-            3: "INPUT",
-            4: "OUTPUT",
-            99: "HALT",
-        }.get(instruction)
+    def _parse_operation(instruction):
+        return Operation(instruction)
 
 
 def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
@@ -26,30 +35,30 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
     pointer = 0
 
     while pointer < len(intcode):
-        opcode = Opcode.from_int(intcode[pointer])
+        instruction = Instruction.from_int(intcode[pointer])
 
-        if opcode.instruction == "HALT":
+        if instruction.operation == Operation.HALT:
             break
-        elif opcode.instruction == "ADDITION":
+        elif instruction.operation == Operation.ADDITION:
             augend = intcode[pointer + 1]
             addend = intcode[pointer + 2]
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[augend] + intcode[addend]
             pointer += 4
-        elif opcode.instruction == "MULTIPLICATION":
+        elif instruction.operation == Operation.MULTIPLICATION:
             multiplier = intcode[pointer + 1]
             multiplicand = intcode[pointer + 2]
             target = intcode[pointer + 3]
 
             intcode[target] = intcode[multiplier] * intcode[multiplicand]
             pointer += 4
-        elif opcode.instruction == "INPUT":
+        elif instruction.operation == Operation.INPUT:
             target = intcode[pointer + 1]
             value = int(intcode_input.readline())
             intcode[target] = value
             pointer += 2
-        elif opcode.instruction == "OUTPUT":
+        elif instruction.operation == Operation.OUTPUT:
             output = intcode[intcode[pointer + 1]]
             intcode_output.write(str(output))
             pointer += 2
@@ -119,9 +128,9 @@ class Test(unittest.TestCase):
 
         self.assertEqual([30, 1, 1, 4, 2, 5, 6, 0, 99], result)
 
-    def test_opcode_class_can_set_instruction(self):
-        opcode_addition = Opcode.from_int(1)
-        opcode_multiplication = Opcode.from_int(2)
+    def test_instruction_class_can_set_instruction(self):
+        instruction_addition = Instruction.from_int(1)
+        instruction_multiplication = Instruction.from_int(2)
 
-        self.assertEqual("ADDITION", opcode_addition.instruction)
-        self.assertEqual("MULTIPLICATION", opcode_multiplication.instruction)
+        self.assertEqual(Operation.ADDITION, instruction_addition.operation)
+        self.assertEqual(Operation.MULTIPLICATION, instruction_multiplication.operation)
