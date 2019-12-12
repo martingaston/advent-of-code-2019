@@ -2,6 +2,7 @@ import sys
 import unittest
 from io import StringIO
 from enum import Enum
+from utils import read_file_to_list
 
 
 class Operation(Enum):
@@ -111,7 +112,10 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
 
 
 if __name__ == "__main__":
-    pass
+    test_diagnostic_program = [
+        int(x) for x in read_file_to_list("input/05.txt")[0].split(",")
+    ]
+    process_intcode(test_diagnostic_program)
 
 
 class Test(unittest.TestCase):
