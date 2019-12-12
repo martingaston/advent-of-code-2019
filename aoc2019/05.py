@@ -12,6 +12,35 @@ class Operation(Enum):
     OUTPUT = 4
     HALT = 99
 
+    @staticmethod
+    def addition(program, instruction, pointer):
+        augend = program.get(pointer + 1, instruction.parameter(0))
+        addend = program.get(pointer + 2, instruction.parameter(1))
+        target = program.get(pointer + 3)
+
+        program.set(target, augend + addend)
+
+    @staticmethod
+    def multiplication(program, instruction, pointer):
+        multiplier = program.get(pointer + 1, instruction.parameter(0))
+        multiplicand = program.get(pointer + 2, instruction.parameter(1))
+        target = program.get(pointer + 3)
+
+        program.set(target, multiplier * multiplicand)
+
+    @staticmethod
+    def input(program, instruction, pointer, intcode_input):
+        target = program.get(pointer + 1)
+        value = int(intcode_input.readline())
+
+        program.set(target, value)
+
+    @staticmethod
+    def output(program, instruction, pointer, intcode_output):
+        output = program.get(pointer + 1, instruction.parameter(0))
+
+        intcode_output.write(str(output))
+
 
 class Mode(Enum):
     POSITION = 0
@@ -43,15 +72,24 @@ class Program:
 
 
 class Instruction:
-    def __init__(self, operation, parameter_modes=None):
+    def __init__(self, operation, parameter_modes=None, parameter_total=0):
         self.operation = operation
         self.parameter_modes = parameter_modes
+        self.parameter_total = parameter_total
 
     @classmethod
     def from_int(cls, instruction):
         operation = cls._parse_operation(instruction)
         parameter_modes = cls._parse_parameter_modes(instruction)
-        return cls(operation, parameter_modes)
+        parameter_total = {
+            Operation.ADDITION: 4,
+            Operation.MULTIPLICATION: 4,
+            Operation.INPUT: 2,
+            Operation.OUTPUT: 2,
+            Operation.HALT: 1,
+        }.get(operation)
+
+        return cls(operation, parameter_modes, parameter_total)
 
     def parameter(self, index):
         try:
@@ -78,31 +116,17 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
         if instruction.operation == Operation.HALT:
             break
         elif instruction.operation == Operation.ADDITION:
-            augend = program.get(pointer + 1, instruction.parameter(0))
-            addend = program.get(pointer + 2, instruction.parameter(1))
-            target = program.get(pointer + 3)
-
-            program.set(target, augend + addend)
-            pointer += 4
+            Operation.addition(program, instruction, pointer)
         elif instruction.operation == Operation.MULTIPLICATION:
-            multiplier = program.get(pointer + 1, instruction.parameter(0))
-            multiplicand = program.get(pointer + 2, instruction.parameter(1))
-            target = program.get(pointer + 3)
-
-            program.set(target, multiplier * multiplicand)
-            pointer += 4
+            Operation.multiplication(program, instruction, pointer)
         elif instruction.operation == Operation.INPUT:
-            target = program.get(pointer + 1)
-            value = int(intcode_input.readline())
-            program.set(target, value)
-            pointer += 2
+            Operation.input(program, instruction, pointer, intcode_input)
         elif instruction.operation == Operation.OUTPUT:
-            output = program.get(pointer + 1, instruction.parameter(0))
-
-            intcode_output.write(str(output))
-            pointer += 2
+            Operation.output(program, instruction, pointer, intcode_output)
         else:
             raise ValueError("opcode should be 1, 2 or 99")
+
+        pointer += instruction.parameter_total
 
     return program._program
 
