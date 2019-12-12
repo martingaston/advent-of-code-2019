@@ -190,3 +190,8 @@ class Test(unittest.TestCase):
         result = process_intcode([1002, 4, 3, 4, 33])
 
         self.assertEqual([1002, 4, 3, 4, 99], result)
+
+    def test_instruction_works_with_negative_numbers(self):
+        result = process_intcode([1101, 100, -1, 4, 99])
+
+        self.assertEqual([1101, 100, -1, 4, 99], result)
