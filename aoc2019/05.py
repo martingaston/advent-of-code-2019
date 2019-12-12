@@ -305,3 +305,47 @@ class Test(unittest.TestCase):
         )
 
         self.assertEqual(intcode_output.getvalue().strip(), "0")
+
+    def test_output_is_zero_if_input_is_equal_to_eight_in_immediate_mode(self):
+        intcode_input = StringIO("999\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "0")
+
+    def test_output_is_zero_if_input_not_less_than_eight_in_immediate_mode(self):
+        intcode_input = StringIO("5\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1")
+
+    def test_input_is_non_zero(self):
+        intcode_input = StringIO("5\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9],
+            intcode_input,
+            intcode_output,
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1")
+
+    def test_input_is_non_zero_in_immediate_mode(self):
+        intcode_input = StringIO("0\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 3, 1105, -1, 9, 1101, 0, 0, 12, 4, 12, 99, 1],
+            intcode_input,
+            intcode_output,
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "0")
