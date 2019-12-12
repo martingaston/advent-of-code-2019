@@ -18,6 +18,25 @@ class Mode(Enum):
     IMMEDIATE = 1
 
 
+class Program:
+    def __init__(self, program):
+        self._program = program
+
+    @classmethod
+    def from_intcode(cls, program):
+        program_list = [int(x) for x in program]
+        return cls(program_list)
+
+    def get(self, index):
+        return self._program[index]
+
+    def set(self, index, value):
+        self._program[index] = value
+
+    def __len__(self):
+        return len(self._program)
+
+
 class Instruction:
     def __init__(self, operation, parameter_modes=None):
         self.operation = operation
@@ -39,11 +58,11 @@ class Instruction:
 
 
 def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
-    intcode = intcode.copy()  # shadow intcode to stop mutation outside of the block
+    program = Program.from_intcode(intcode)
     pointer = 0
 
-    while pointer < len(intcode):
-        instruction = Instruction.from_int(intcode[pointer])
+    while pointer < len(program):
+        instruction = Instruction.from_int(program.get(pointer))
 
         if instruction.operation == Operation.HALT:
             break
@@ -52,63 +71,63 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
                 len(instruction.parameter_modes) < 1
                 or instruction.parameter_modes[0] is Mode.POSITION
             ):
-                augend = intcode[intcode[pointer + 1]]
+                augend = program.get(intcode[pointer + 1])
             elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                augend = intcode[pointer + 1]
+                augend = program.get(pointer + 1)
 
             if (
                 len(instruction.parameter_modes) < 2
                 or instruction.parameter_modes[1] is Mode.POSITION
             ):
-                addend = intcode[intcode[pointer + 2]]
+                addend = program.get(intcode[pointer + 2])
             elif instruction.parameter_modes[1] is Mode.IMMEDIATE:
-                addend = intcode[pointer + 2]
+                addend = program.get(pointer + 2)
 
-            target = intcode[pointer + 3]
+            target = program.get(pointer + 3)
 
-            intcode[target] = augend + addend
+            program.set(target, augend + addend)
             pointer += 4
         elif instruction.operation == Operation.MULTIPLICATION:
             if (
                 len(instruction.parameter_modes) < 1
                 or instruction.parameter_modes[0] is Mode.POSITION
             ):
-                multiplier = intcode[intcode[pointer + 1]]
+                multiplier = program.get(intcode[pointer + 1])
             elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                multiplier = intcode[pointer + 1]
+                multiplier = program.get(pointer + 1)
 
             if (
                 len(instruction.parameter_modes) < 2
                 or instruction.parameter_modes[1] is Mode.POSITION
             ):
-                multiplicand = intcode[intcode[pointer + 2]]
+                multiplicand = program.get(intcode[pointer + 2])
             elif instruction.parameter_modes[1] is Mode.IMMEDIATE:
-                multiplicand = intcode[pointer + 2]
+                multiplicand = program.get(pointer + 2)
 
-            target = intcode[pointer + 3]
+            target = program.get(pointer + 3)
 
-            intcode[target] = multiplier * multiplicand
+            program.set(target, multiplier * multiplicand)
             pointer += 4
         elif instruction.operation == Operation.INPUT:
-            target = intcode[pointer + 1]
+            target = program.get(pointer + 1)
             value = int(intcode_input.readline())
-            intcode[target] = value
+            program.set(target, value)
             pointer += 2
         elif instruction.operation == Operation.OUTPUT:
             if (
                 len(instruction.parameter_modes) < 1
                 or instruction.parameter_modes[0] is Mode.POSITION
             ):
-                output = intcode[intcode[pointer + 1]]
+                output = program.get(intcode[pointer + 1])
             elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                output = intcode[pointer + 1]
+                output = program.get(pointer + 1)
 
             intcode_output.write(str(output))
             pointer += 2
         else:
             raise ValueError("opcode should be 1, 2 or 99")
 
-    return intcode
+    return program._program
 
 
 if __name__ == "__main__":
