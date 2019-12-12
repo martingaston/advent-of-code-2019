@@ -201,6 +201,7 @@ if __name__ == "__main__":
     test_diagnostic_program = [
         int(x) for x in read_file_to_list("input/05.txt")[0].split(",")
     ]
+
     process_intcode(test_diagnostic_program)
 
 
@@ -349,3 +350,183 @@ class Test(unittest.TestCase):
         )
 
         self.assertEqual(intcode_output.getvalue().strip(), "0")
+
+    def test_diagnostic_output_with_input_below_eight(self):
+        intcode_input = StringIO("5\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [
+                3,
+                21,
+                1008,
+                21,
+                8,
+                20,
+                1005,
+                20,
+                22,
+                107,
+                8,
+                21,
+                20,
+                1006,
+                20,
+                31,
+                1106,
+                0,
+                36,
+                98,
+                0,
+                0,
+                1002,
+                21,
+                125,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                104,
+                999,
+                1105,
+                1,
+                46,
+                1101,
+                1000,
+                1,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                98,
+                99,
+            ],
+            intcode_input,
+            intcode_output,
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "999")
+
+    def test_diagnostic_output_with_input_of_eight(self):
+        intcode_input = StringIO("8\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [
+                3,
+                21,
+                1008,
+                21,
+                8,
+                20,
+                1005,
+                20,
+                22,
+                107,
+                8,
+                21,
+                20,
+                1006,
+                20,
+                31,
+                1106,
+                0,
+                36,
+                98,
+                0,
+                0,
+                1002,
+                21,
+                125,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                104,
+                999,
+                1105,
+                1,
+                46,
+                1101,
+                1000,
+                1,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                98,
+                99,
+            ],
+            intcode_input,
+            intcode_output,
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1000")
+
+    def test_diagnostic_output_with_input_above_eight(self):
+        intcode_input = StringIO("15\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [
+                3,
+                21,
+                1008,
+                21,
+                8,
+                20,
+                1005,
+                20,
+                22,
+                107,
+                8,
+                21,
+                20,
+                1006,
+                20,
+                31,
+                1106,
+                0,
+                36,
+                98,
+                0,
+                0,
+                1002,
+                21,
+                125,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                104,
+                999,
+                1105,
+                1,
+                46,
+                1101,
+                1000,
+                1,
+                20,
+                4,
+                20,
+                1105,
+                1,
+                46,
+                98,
+                99,
+            ],
+            intcode_input,
+            intcode_output,
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1001")
