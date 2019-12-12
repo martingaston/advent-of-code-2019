@@ -47,11 +47,25 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
         if instruction.operation == Operation.HALT:
             break
         elif instruction.operation == Operation.ADDITION:
-            augend = intcode[pointer + 1]
-            addend = intcode[pointer + 2]
+            if (
+                len(instruction.parameter_modes) < 1
+                or instruction.parameter_modes[0] is Mode.POSITION
+            ):
+                augend = intcode[intcode[pointer + 1]]
+            elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
+                augend = intcode[pointer + 1]
+
+            if (
+                len(instruction.parameter_modes) < 2
+                or instruction.parameter_modes[1] is Mode.POSITION
+            ):
+                addend = intcode[intcode[pointer + 2]]
+            elif instruction.parameter_modes[1] is Mode.IMMEDIATE:
+                addend = intcode[pointer + 2]
+
             target = intcode[pointer + 3]
 
-            intcode[target] = intcode[augend] + intcode[addend]
+            intcode[target] = augend + addend
             pointer += 4
         elif instruction.operation == Operation.MULTIPLICATION:
             if (
@@ -80,7 +94,14 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
             intcode[target] = value
             pointer += 2
         elif instruction.operation == Operation.OUTPUT:
-            output = intcode[intcode[pointer + 1]]
+            if (
+                len(instruction.parameter_modes) < 1
+                or instruction.parameter_modes[0] is Mode.POSITION
+            ):
+                output = intcode[intcode[pointer + 1]]
+            elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
+                output = intcode[pointer + 1]
+
             intcode_output.write(str(output))
             pointer += 2
         else:
