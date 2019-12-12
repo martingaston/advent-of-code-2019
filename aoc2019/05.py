@@ -27,8 +27,13 @@ class Program:
         program_list = [int(x) for x in program]
         return cls(program_list)
 
-    def get(self, index):
-        return self._program[index]
+    def get(self, index, mode=None):
+        if mode is Mode.IMMEDIATE:
+            return self._program[index]
+        elif mode is Mode.POSITION:
+            return self._program[self._program[index]]
+        else:
+            return self._program[index]
 
     def set(self, index, value):
         self._program[index] = value
@@ -47,6 +52,12 @@ class Instruction:
         operation = cls._parse_operation(instruction)
         parameter_modes = cls._parse_parameter_modes(instruction)
         return cls(operation, parameter_modes)
+
+    def parameter(self, index):
+        try:
+            return self.parameter_modes[index]
+        except IndexError:
+            return Mode.POSITION
 
     def _parse_operation(instruction):
         instruction_slice = str(instruction)[-2:]
@@ -67,43 +78,15 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
         if instruction.operation == Operation.HALT:
             break
         elif instruction.operation == Operation.ADDITION:
-            if (
-                len(instruction.parameter_modes) < 1
-                or instruction.parameter_modes[0] is Mode.POSITION
-            ):
-                augend = program.get(intcode[pointer + 1])
-            elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                augend = program.get(pointer + 1)
-
-            if (
-                len(instruction.parameter_modes) < 2
-                or instruction.parameter_modes[1] is Mode.POSITION
-            ):
-                addend = program.get(intcode[pointer + 2])
-            elif instruction.parameter_modes[1] is Mode.IMMEDIATE:
-                addend = program.get(pointer + 2)
-
+            augend = program.get(pointer + 1, instruction.parameter(0))
+            addend = program.get(pointer + 2, instruction.parameter(1))
             target = program.get(pointer + 3)
 
             program.set(target, augend + addend)
             pointer += 4
         elif instruction.operation == Operation.MULTIPLICATION:
-            if (
-                len(instruction.parameter_modes) < 1
-                or instruction.parameter_modes[0] is Mode.POSITION
-            ):
-                multiplier = program.get(intcode[pointer + 1])
-            elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                multiplier = program.get(pointer + 1)
-
-            if (
-                len(instruction.parameter_modes) < 2
-                or instruction.parameter_modes[1] is Mode.POSITION
-            ):
-                multiplicand = program.get(intcode[pointer + 2])
-            elif instruction.parameter_modes[1] is Mode.IMMEDIATE:
-                multiplicand = program.get(pointer + 2)
-
+            multiplier = program.get(pointer + 1, instruction.parameter(0))
+            multiplicand = program.get(pointer + 2, instruction.parameter(1))
             target = program.get(pointer + 3)
 
             program.set(target, multiplier * multiplicand)
@@ -114,13 +97,7 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
             program.set(target, value)
             pointer += 2
         elif instruction.operation == Operation.OUTPUT:
-            if (
-                len(instruction.parameter_modes) < 1
-                or instruction.parameter_modes[0] is Mode.POSITION
-            ):
-                output = program.get(intcode[pointer + 1])
-            elif instruction.parameter_modes[0] is Mode.IMMEDIATE:
-                output = program.get(pointer + 1)
+            output = program.get(pointer + 1, instruction.parameter(0))
 
             intcode_output.write(str(output))
             pointer += 2
