@@ -5,6 +5,17 @@ from enum import Enum
 from utils import read_file_to_list
 
 
+class Pointer:
+    def __init__(self):
+        self._position = 0
+
+    def get(self):
+        return self._position
+
+    def jump(self, position):
+        self._position = int(position)
+
+
 class Operation(Enum):
     ADDITION = 1
     MULTIPLICATION = 2
@@ -18,48 +29,85 @@ class Operation(Enum):
 
     @staticmethod
     def addition(program, instruction, pointer):
-        augend = program.get(pointer + 1, instruction.parameter(0))
-        addend = program.get(pointer + 2, instruction.parameter(1))
-        target = program.get(pointer + 3)
+        current_pointer = pointer.get()
+        augend = program.get(current_pointer + 1, instruction.parameter(0))
+        addend = program.get(current_pointer + 2, instruction.parameter(1))
+        target = program.get(current_pointer + 3)
 
         program.set(target, augend + addend)
+        pointer.jump(current_pointer + 4)
 
     @staticmethod
     def multiplication(program, instruction, pointer):
-        multiplier = program.get(pointer + 1, instruction.parameter(0))
-        multiplicand = program.get(pointer + 2, instruction.parameter(1))
-        target = program.get(pointer + 3)
+        current_pointer = pointer.get()
+        multiplier = program.get(current_pointer + 1, instruction.parameter(0))
+        multiplicand = program.get(current_pointer + 2, instruction.parameter(1))
+        target = program.get(current_pointer + 3)
 
         program.set(target, multiplier * multiplicand)
+        pointer.jump(current_pointer + 4)
 
     @staticmethod
     def input(program, instruction, pointer, intcode_input):
-        target = program.get(pointer + 1)
+        current_pointer = pointer.get()
+        target = program.get(current_pointer + 1)
         value = int(intcode_input.readline())
 
         program.set(target, value)
+        pointer.jump(current_pointer + 2)
 
     @staticmethod
     def output(program, instruction, pointer, intcode_output):
-        output = program.get(pointer + 1, instruction.parameter(0))
+        current_pointer = pointer.get()
+        output = program.get(current_pointer + 1, instruction.parameter(0))
 
         intcode_output.write(str(output))
+        pointer.jump(current_pointer + 2)
 
     @staticmethod
     def jump_if_true(program, instruction, pointer):
-        predicate = program.get(pointer + 1) is not 0
+        current_pointer = pointer.get()
+        predicate = program.get(current_pointer + 1, instruction.parameter(0)) is not 0
+
+        pointer.jump(
+            program.get(current_pointer + 2, instruction.parameter(1))
+            if predicate
+            else current_pointer + 3
+        )
 
     @staticmethod
     def jump_if_false(program, instruction, pointer):
-        predicate = program.get(pointer + 1) is 0
+        current_pointer = pointer.get()
+        predicate = program.get(current_pointer + 1, instruction.parameter(0)) is 0
+
+        pointer.jump(
+            program.get(current_pointer + 2, instruction.parameter(1))
+            if predicate
+            else current_pointer + 3
+        )
 
     @staticmethod
     def less_than(program, instruction, pointer):
-        predicate = program.get(pointer + 1) < program.get(pointer + 2)
+        current_pointer = pointer.get()
+        predicate = program.get(
+            current_pointer + 1, instruction.parameter(0)
+        ) < program.get(current_pointer + 2, instruction.parameter(1))
+        target = program.get(current_pointer + 3)
+
+        program.set(target, 1 if predicate else 0)
+        pointer.jump(current_pointer + 4)
 
     @staticmethod
     def equals(program, instruction, pointer):
-        predicate = program.get(pointer + 1) is program.get(pointer + 2)
+        current_pointer = pointer.get()
+        predicate = program.get(
+            current_pointer + 1, instruction.parameter(0)
+        ) is program.get(current_pointer + 2, instruction.parameter(1))
+
+        target = program.get(current_pointer + 3)
+
+        program.set(target, 1 if predicate else 0)
+        pointer.jump(current_pointer + 4)
 
 
 class Mode(Enum):
@@ -92,24 +140,16 @@ class Program:
 
 
 class Instruction:
-    def __init__(self, operation, parameter_modes=None, parameter_total=0):
+    def __init__(self, operation, parameter_modes=None):
         self.operation = operation
         self.parameter_modes = parameter_modes
-        self.parameter_total = parameter_total
 
     @classmethod
     def from_int(cls, instruction):
         operation = cls._parse_operation(instruction)
         parameter_modes = cls._parse_parameter_modes(instruction)
-        parameter_total = {
-            Operation.ADDITION: 4,
-            Operation.MULTIPLICATION: 4,
-            Operation.INPUT: 2,
-            Operation.OUTPUT: 2,
-            Operation.HALT: 1,
-        }.get(operation)
 
-        return cls(operation, parameter_modes, parameter_total)
+        return cls(operation, parameter_modes)
 
     def parameter(self, index):
         try:
@@ -128,10 +168,10 @@ class Instruction:
 
 def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout):
     program = Program.from_intcode(intcode)
-    pointer = 0
+    pointer = Pointer()
 
-    while pointer < len(program):
-        instruction = Instruction.from_int(program.get(pointer))
+    while pointer.get() < len(program):
+        instruction = Instruction.from_int(program.get(pointer.get()))
 
         if instruction.operation == Operation.HALT:
             break
@@ -143,10 +183,16 @@ def process_intcode(intcode, intcode_input=sys.stdin, intcode_output=sys.stdout)
             Operation.input(program, instruction, pointer, intcode_input)
         elif instruction.operation == Operation.OUTPUT:
             Operation.output(program, instruction, pointer, intcode_output)
+        elif instruction.operation == Operation.JUMP_IF_TRUE:
+            Operation.jump_if_true(program, instruction, pointer)
+        elif instruction.operation == Operation.JUMP_IF_FALSE:
+            Operation.jump_if_false(program, instruction, pointer)
+        elif instruction.operation == Operation.LESS_THAN:
+            Operation.less_than(program, instruction, pointer)
+        elif instruction.operation == Operation.EQUALS:
+            Operation.equals(program, instruction, pointer)
         else:
             raise ValueError("opcode should be 1, 2 or 99")
-
-        pointer += instruction.parameter_total
 
     return program._program
 
