@@ -10,6 +10,10 @@ class Operation(Enum):
     MULTIPLICATION = 2
     INPUT = 3
     OUTPUT = 4
+    JUMP_IF_TRUE = 5
+    JUMP_IF_FALSE = 6
+    LESS_THAN = 7
+    EQUALS = 8
     HALT = 99
 
     @staticmethod
@@ -40,6 +44,22 @@ class Operation(Enum):
         output = program.get(pointer + 1, instruction.parameter(0))
 
         intcode_output.write(str(output))
+
+    @staticmethod
+    def jump_if_true(program, instruction, pointer):
+        predicate = program.get(pointer + 1) is not 0
+
+    @staticmethod
+    def jump_if_false(program, instruction, pointer):
+        predicate = program.get(pointer + 1) is 0
+
+    @staticmethod
+    def less_than(program, instruction, pointer):
+        predicate = program.get(pointer + 1) < program.get(pointer + 2)
+
+    @staticmethod
+    def equals(program, instruction, pointer):
+        predicate = program.get(pointer + 1) is program.get(pointer + 2)
 
 
 class Mode(Enum):
@@ -219,3 +239,23 @@ class Test(unittest.TestCase):
         result = process_intcode([1101, 100, -1, 4, 99])
 
         self.assertEqual([1101, 100, -1, 4, 99], result)
+
+    def test_output_is_one_if_input_is_equal_to_eight(self):
+        intcode_input = StringIO("8\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1")
+
+    def test_output_is_zero_if_input_not_less_than_eight(self):
+        intcode_input = StringIO("15\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "0")
