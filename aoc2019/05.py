@@ -67,7 +67,7 @@ class Operation(Enum):
     @staticmethod
     def jump_if_true(program, instruction, pointer):
         current_pointer = pointer.get()
-        predicate = program.get(current_pointer + 1, instruction.parameter(0)) is not 0
+        predicate = program.get(current_pointer + 1, instruction.parameter(0)) != 0
 
         pointer.jump(
             program.get(current_pointer + 2, instruction.parameter(1))
@@ -78,7 +78,7 @@ class Operation(Enum):
     @staticmethod
     def jump_if_false(program, instruction, pointer):
         current_pointer = pointer.get()
-        predicate = program.get(current_pointer + 1, instruction.parameter(0)) is 0
+        predicate = program.get(current_pointer + 1, instruction.parameter(0)) == 0
 
         pointer.jump(
             program.get(current_pointer + 2, instruction.parameter(1))
@@ -102,7 +102,7 @@ class Operation(Enum):
         current_pointer = pointer.get()
         predicate = program.get(
             current_pointer + 1, instruction.parameter(0)
-        ) is program.get(current_pointer + 2, instruction.parameter(1))
+        ) == program.get(current_pointer + 2, instruction.parameter(1))
 
         target = program.get(current_pointer + 3)
 
@@ -121,8 +121,7 @@ class Program:
 
     @classmethod
     def from_intcode(cls, program):
-        program_list = [int(x) for x in program]
-        return cls(program_list)
+        return cls(program)
 
     def get(self, index, mode=None):
         if mode is Mode.IMMEDIATE:
@@ -201,7 +200,6 @@ if __name__ == "__main__":
     test_diagnostic_program = [
         int(x) for x in read_file_to_list("input/05.txt")[0].split(",")
     ]
-
     process_intcode(test_diagnostic_program)
 
 
@@ -296,6 +294,15 @@ class Test(unittest.TestCase):
         )
 
         self.assertEqual(intcode_output.getvalue().strip(), "1")
+    def test_output_is_zero_if_input_is_not_equal_to_eight(self):
+        intcode_input = StringIO("4\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "0")
 
     def test_output_is_zero_if_input_not_less_than_eight(self):
         intcode_input = StringIO("15\n")
@@ -306,6 +313,15 @@ class Test(unittest.TestCase):
         )
 
         self.assertEqual(intcode_output.getvalue().strip(), "0")
+    def test_output_is_one_if_input_less_than_eight(self):
+        intcode_input = StringIO("6\n")
+        intcode_output = StringIO()
+
+        result = process_intcode(
+            [3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], intcode_input, intcode_output
+        )
+
+        self.assertEqual(intcode_output.getvalue().strip(), "1")
 
     def test_output_is_zero_if_input_is_equal_to_eight_in_immediate_mode(self):
         intcode_input = StringIO("999\n")
@@ -350,6 +366,11 @@ class Test(unittest.TestCase):
         )
 
         self.assertEqual(intcode_output.getvalue().strip(), "0")
+
+    def test_jump_works_in_immediate_mode(self):
+        result = process_intcode([1101,9,0,0,105,1,0,1998,819,99])
+
+        self.assertEqual([9,9,0,0,105,1,0,1998,819,99], result)
 
     def test_diagnostic_output_with_input_below_eight(self):
         intcode_input = StringIO("5\n")
