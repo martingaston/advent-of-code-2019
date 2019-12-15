@@ -6,9 +6,14 @@ def count_orbits(orbit_map):
     for orbit in orbit_map:
         orbiting, orbiter = orbit.split(")")
         if orbiting not in space:
-            space[orbiting] = orbiter
+            space[orbiting] = []
+            space[orbiting].append(orbiter)
+        else:
+            space[orbiting].append(orbiter)
 
-    return len(dict.keys(space)), max(0, len(dict.keys(space)) - 1)
+    print(space)
+
+    return len(orbit_map), max(0, len(orbit_map) - 1)
 
 
 class Test(unittest.TestCase):
@@ -46,3 +51,12 @@ class Test(unittest.TestCase):
 
         self.assertEqual(3, direct_orbits)
         self.assertEqual(2, indirect_orbits)
+
+    def test_multiple_objects_can_orbit_an_object(self):
+        orbit_map = ["COM)B", "B)C", "C)D", "B)E"]
+        orbits = count_orbits(orbit_map)
+
+        direct_orbits, indirect_orbits = count_orbits(orbit_map)
+
+        self.assertEqual(4, direct_orbits)
+        self.assertEqual(5, indirect_orbits)
