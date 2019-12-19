@@ -1,62 +1,122 @@
 import unittest
+import collections
+
+
+def steps_to_root(node, nodes):
+    root = "COM"
+    count = 1
+
+    while nodes[node] != root:
+        count += 1
+        node = nodes[node]
+
+    return count
+
+
+def parse_orbit_map(orbit_map):
+    orbit_nodes = {}
+
+    for orbit_node in orbit_map:
+        orbiter, orbits = orbit_node.split(")")
+        if orbits not in orbit_nodes:
+            orbit_nodes[orbits] = orbiter
+
+    return orbit_nodes
+
+
+def parse_bidirectional_map(orbit_map):
+    orbit_nodes = {}
+
+    for orbit_node in orbit_map:
+        orbiter, orbits = orbit_node.split(")")
+        if orbiter not in orbit_nodes:
+            orbit_nodes[orbiter] = [orbits]
+        else:
+            orbit_nodes[orbiter].append(orbits)
+
+        if orbits not in orbit_nodes:
+            orbit_nodes[orbits] = [orbiter]
+        else:
+            orbit_nodes[orbits].append(orbiter)
+
+    return orbit_nodes
+
+
+def bfs(start, finish, bidirectional_map):
+    seen = set()
+    seen.add(start)
+    queue = collections.deque([])
+    queue.append((bidirectional_map[start], 1))
+
+    while finish not in seen:
+        node, steps = queue.popleft()
+
+        for child in node:
+            if child in seen:
+                continue
+
+            seen.add(child)
+            if child == finish:
+                return steps
+
+            queue.append((bidirectional_map[child], steps + 1))
 
 
 def count_orbits(orbit_map):
-    space = {}
-    for orbit in orbit_map:
-        orbiting, orbiter = orbit.split(")")
-        if orbiting not in space:
-            space[orbiting] = []
-            space[orbiting].append(orbiter)
-        else:
-            space[orbiting].append(orbiter)
+    orbit_nodes = parse_orbit_map(orbit_map)
+    return sum([steps_to_root(orbit_node, orbit_nodes) for orbit_node in orbit_nodes])
 
-    print(space)
 
-    return len(orbit_map), max(0, len(orbit_map) - 1)
+if __name__ == "__main__":
+    with open("input/06.txt") as f:
+        orbit_map = f.read().splitlines()
+        bidirectional_map = parse_bidirectional_map(orbit_map)
+        shortest = bfs("YOU", "SAN", bidirectional_map)
+        print(
+            f"the shortest number of orbit stops between YOU and SAN is: {shortest - 2}"
+        )
+        print(
+            f"the total direct and indirect orbits of the orbit map are: {count_orbits(orbit_map)}"
+        )
 
 
 class Test(unittest.TestCase):
-    def test_is_working(self):
-        self.assertEqual(3, 2 + 1)
-
-    def test_center_of_mass_has_no_orbits(self):
-        orbits = count_orbits([])
-
-        self.assertEqual(orbits, (0, 0))
-
-    def test_one_object_has_one_direct_orbit(self):
-        orbit_map = ["COM)B"]
+    def test_functional_test_to_check_multiple_branches(self):
+        orbit_map = [
+            "COM)B",
+            "B)C",
+            "C)D",
+            "D)E",
+            "E)F",
+            "B)G",
+            "G)H",
+            "D)I",
+            "E)J",
+            "J)K",
+            "K)L",
+        ]
         orbits = count_orbits(orbit_map)
 
-        direct_orbits, indirect_orbits = count_orbits(orbit_map)
+        self.assertEqual(42, count_orbits(orbit_map))
 
-        self.assertEqual(1, direct_orbits)
-        self.assertEqual(0, indirect_orbits)
+    def test_shortest_path_to_santa(self):
+        orbit_map = [
+            "COM)B",
+            "B)C",
+            "C)D",
+            "D)E",
+            "E)F",
+            "B)G",
+            "G)H",
+            "D)I",
+            "E)J",
+            "J)K",
+            "K)L",
+            "K)YOU",
+            "I)SAN",
+        ]
 
-    def test_two_objects_have_two_direct_orbits_and_one_indirect_orbit(self):
-        orbit_map = ["COM)B", "B)C"]
-        orbits = count_orbits(orbit_map)
+        bidirectional_map = parse_bidirectional_map(orbit_map)
+        shortest = bfs("YOU", "SAN", bidirectional_map)
 
-        direct_orbits, indirect_orbits = count_orbits(orbit_map)
-
-        self.assertEqual(2, direct_orbits)
-        self.assertEqual(1, indirect_orbits)
-
-    def test_three_objects_have_three_direct_orbits_and_two_indirect_orbits(self):
-        orbit_map = ["COM)B", "B)C", "C)D"]
-        orbits = count_orbits(orbit_map)
-
-        direct_orbits, indirect_orbits = count_orbits(orbit_map)
-
-        self.assertEqual(3, direct_orbits)
-        self.assertEqual(2, indirect_orbits)
-
-    def test_multiple_objects_can_orbit_an_object(self):
-        orbit_map = ["COM)B", "B)C", "C)D", "B)E"]
-        orbits = count_orbits(orbit_map)
-
-        direct_orbits, indirect_orbits = count_orbits(orbit_map)
-
-        self.assertEqual(4, direct_orbits)
-        self.assertEqual(5, indirect_orbits)
+        self.assertEqual(4, shortest - 2)
